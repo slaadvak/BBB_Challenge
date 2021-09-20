@@ -27,11 +27,8 @@ namespace BBB
         {
             Console.WriteLine("Starting " + GpioId + " Thread");
 
-            Button button = new Button(GpioChip, Pin, GpioId, DbWriter);   
+            using var button = new Button(GpioChip, Pin, GpioId, DbWriter);   
             button.Open();
-            var state = button.Read() ? IDbEventWriter.EventType.HIGH_ON_BOOT 
-                                               : IDbEventWriter.EventType.LOW_ON_BOOT;
-            DbWriter.SaveEvent(DateTime.Now, GpioId, state);
             while(!_shouldStop)
             {
                 Thread.Sleep(1000);
@@ -70,7 +67,7 @@ namespace BBB
             Thread buttonThread3 = new Thread(buttonWorker_P8_09.DoWork);
             Thread buttonThread4 = new Thread(buttonWorker_P8_10.DoWork);
 
-            var webWorker = new wsWorker();
+            using var webWorker = new wsWorker();
             Thread webThread = new Thread(webWorker.DoWork);
 
             buttonThread1.Start();
