@@ -4,6 +4,8 @@ using System.Device.I2c;
 using Sqlite;
 using ThreadUtils;
 
+using Web;
+
 namespace BBB
 {
     class ButtonWorker : Worker
@@ -68,10 +70,14 @@ namespace BBB
             Thread buttonThread3 = new Thread(buttonWorker_P8_09.DoWork);
             Thread buttonThread4 = new Thread(buttonWorker_P8_10.DoWork);
 
+            var webWorker = new wsWorker();
+            Thread webThread = new Thread(webWorker.DoWork);
+
             buttonThread1.Start();
             buttonThread2.Start();
             buttonThread3.Start();
             buttonThread4.Start();
+            webThread.Start();
 
             // Wait for Ctrl+C
             exitEvent.WaitOne();
@@ -80,11 +86,13 @@ namespace BBB
             buttonWorker_P8_08.RequestStop();
             buttonWorker_P8_09.RequestStop();
             buttonWorker_P8_10.RequestStop();
+            webWorker.RequestStop();
 
             buttonThread1.Join();
             buttonThread2.Join();
             buttonThread3.Join();
             buttonThread4.Join();
+            webThread.Join();
 
             Console.WriteLine("Exiting Main");
 

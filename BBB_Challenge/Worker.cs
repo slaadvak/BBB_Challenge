@@ -1,7 +1,7 @@
 namespace ThreadUtils
 {
 
-abstract class Worker
+public abstract class Worker
 {
     //This method will be called when the thread is started.
     public abstract void DoWork();
