@@ -1,3 +1,4 @@
+using System;
 using NUnit.Framework;
 using Sqlite;
 using System.IO;
@@ -6,6 +7,8 @@ namespace Test_BBB_Challenge
 {
     public class Tests
     {
+        private SqliteEventWriter dbWriter;
+
         [SetUp]
         public void Setup()
         {
@@ -14,8 +17,8 @@ namespace Test_BBB_Challenge
         [Test]
         public void Test1()
         {
-            // File.Delete("Test.db");
-            SqliteEventWriter dbWriter = new SqliteEventWriter("Test.db");
+            File.Delete("Test.db");
+            dbWriter = new SqliteEventWriter("Test.db");
             Assert.AreEqual(File.Exists("Test.db"), true);
             Assert.Pass();
         }
@@ -23,7 +26,12 @@ namespace Test_BBB_Challenge
         [Test]
         public void Test2()
         {
-            Assert.IsTrue(false);
+            dbWriter.SaveEvent(DateTime.Now,"P8_07", IDbEventWriter.EventType.HIGH);
+            dbWriter.SaveEvent(DateTime.Now,"P8_08", IDbEventWriter.EventType.HIGH_ON_BOOT);
+            dbWriter.SaveEvent(DateTime.Now,"P8_09", IDbEventWriter.EventType.LOW);
+            var readResult = dbWriter.ReadAllEvents();
+
+            Assert.AreEqual(readResult.Count, 4);
         }
     }
 }

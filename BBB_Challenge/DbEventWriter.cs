@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Data;
 using Microsoft.Data.Sqlite;
 
 namespace Sqlite
@@ -16,8 +18,33 @@ namespace Sqlite
         public SqliteEventWriter(String dataSource)
         {
             this.dataSource = dataSource;
-
             CreateDB();
+        }
+
+        public List<List<string>> ReadAllEvents()
+        {
+            var data = new List<List<string>>();
+            data.Add(new List<string>(){ "TIME", "GPIO", "EVENT_TYPE"});
+            using var connection = new SqliteConnection("Data Source=" + dataSource);
+            connection.Open();
+
+            var cmdGetTable = connection.CreateCommand();
+            cmdGetTable.CommandText = "SELECT * from Events";
+            using var reader = cmdGetTable.ExecuteReader();
+            while (reader.Read())
+            {
+                var newRow = new List<string>();
+                var dateTime = reader.GetString(0);
+                var GPIO = reader.GetString(1);
+                var eventType = reader.GetString(2);
+
+                newRow.Add(dateTime);
+                newRow.Add(GPIO);
+                newRow.Add(eventType);
+                data.Add(newRow);
+            }
+
+            return data;
         }
        public void SaveEvent(DateTime time, string pin, IDbEventWriter.EventType type)
        {
@@ -26,11 +53,10 @@ namespace Sqlite
                 connection.Open();
 
                 var cmdAddEntry = connection.CreateCommand();
+                var timeStr = time.ToString("MM/dd/yyyy hh:mm:ss.fff tt");
 
                 cmdAddEntry.CommandText =
-                string.Format(@"
-                    INSERT INTO Events(TIME, GPIO, event_type) VALUES({0}, {1}, {2})
-                ", time, pin, type);
+                    $@"INSERT INTO Events(TIME, GPIO, event_type) VALUES(""{timeStr}"", ""{pin}"", ""{type.ToString()}"")";
 
                 cmdAddEntry.ExecuteNonQuery();
 
@@ -44,17 +70,15 @@ namespace Sqlite
             {
                 connection.Open();
 
-                var cmdCreateLogbook = connection.CreateCommand();
-                cmdCreateLogbook.CommandText =
-                @"
-                    CREATE TABLE IF NOT EXISTS Events (
-                        TIME DATETIME DEFAULT CURRENT_TIMESTAMP,
+                var cmdCreateEventTable = connection.CreateCommand();
+                cmdCreateEventTable.CommandText =
+                @"CREATE TABLE IF NOT EXISTS Events (
+                        TIME TEXT,
                         GPIO TEXT,
                         event_type TEXT
-                    )
-                ";
+                    )";
 
-                cmdCreateLogbook.ExecuteNonQuery();
+                cmdCreateEventTable.ExecuteNonQuery();
 
                 connection.Close();
             }
