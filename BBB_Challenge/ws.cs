@@ -1,7 +1,9 @@
 using System;
+using System.IO;
 using System.Text;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Sqlite;
 
 using Microsoft.AspNetCore.Hosting;
@@ -11,8 +13,7 @@ namespace Web
 {
     public class Startup
     {
-
-        public void Configure(IApplicationBuilder app)
+        public static string GetTable()
         {
             var dbWriter = new SqliteEventWriter("GpioEvents.db");
             var res = dbWriter.ReadAllEvents();
@@ -39,10 +40,18 @@ namespace Web
             sb.Append(@"</table>
                         </body>
                         </html>");
+            return sb.ToString();
+        }
 
+        public void ConfigureServices(IServiceCollection services){
+            services.AddMvc();
+        }
 
-            app.Run(context => context.Response.WriteAsync(sb.ToString()));
-            
+        public void Configure(IApplicationBuilder app)
+        {
+            app.UseMvc();
+
+            app.Run(context => context.Response.WriteAsync(GetTable()));
         }
     }
 
@@ -53,10 +62,11 @@ namespace Web
         {
              host = new WebHostBuilder()
             .UseKestrel()
-            .UseUrls("http://localhost:8082")
+            //.UseUrls("http://localhost:8082")
+            .UseContentRoot(Directory.GetCurrentDirectory())
             .UseStartup<Startup>()
             .Build();
-
+            
             host.Run();
         }
 
