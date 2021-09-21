@@ -6,7 +6,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Sqlite;
 
+using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Internal;
+using Microsoft.AspNetCore.Routing;
 using ThreadUtils;
 
 namespace Web 
@@ -49,9 +52,18 @@ namespace Web
 
         public void Configure(IApplicationBuilder app)
         {
-            app.UseMvc();
+            app.UseEndpointRouting();
+            app.UseEndpoint();
 
-            app.Run(context => context.Response.WriteAsync(GetTable()));
+            app.UseMvc(endpoints =>
+            {
+                endpoints.MapGet("/home/evt", async context =>
+                {
+                    await context.Response.WriteAsync(GetTable());
+                });
+            });
+
+            app.Run(context => context.Response.WriteAsync("Hello from BBB!"));
         }
     }
 

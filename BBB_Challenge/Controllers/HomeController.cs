@@ -4,7 +4,7 @@ namespace Web
 {
     public class HomeController : Controller
     {
-        [Route("home/index")]
+        [Route("home/events")]
         public IActionResult Index()
         {
             return Ok("hi");
