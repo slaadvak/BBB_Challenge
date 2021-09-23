@@ -1,27 +1,59 @@
 using System;
 using System.Device.Gpio;
 using System.Device.Gpio.Drivers;
+using System.Threading;
 using Sqlite;
+using ThreadUtils;
 
 namespace BBB
 {
-    
-    class Button : IDisposable
+    public interface IGpioCtrl : IDisposable
     {
-        private int gpiochip;
+        void OpenPin(int pinNumber, PinMode mode);
+        PinValue Read(int pinNumber);
+        void RegisterCallbackForPinValueChangedEvent(int pinNumber,
+            PinEventTypes evtType, PinChangeEventHandler callback);
+    }
+
+    public class GpioCtrl : IGpioCtrl 
+    {
+        public GpioController Ctrl { get; private set; }
+
+        public GpioCtrl(GpioController ctrl)
+        {
+            Ctrl = ctrl;
+        }
+        public void OpenPin(int pinNumber, PinMode mode)
+        {
+           Ctrl.OpenPin(pinNumber, mode);
+        }
+        public PinValue Read(int pinNumber)
+        {
+            return Ctrl.Read(pinNumber);
+        }
+        public void RegisterCallbackForPinValueChangedEvent(int pinNumber,
+            PinEventTypes evtType, PinChangeEventHandler callback)
+            {
+                Ctrl.RegisterCallbackForPinValueChangedEvent(pinNumber, evtType, callback);
+            }
+        public void Dispose()
+        {
+            Ctrl.Dispose();
+        }
+    }
+
+    public class Button : IDisposable
+    {
         private int pinNumber;
         private string gpioId;
-        private UnixDriver driver;
-        private GpioController ctrl;
+        private IGpioCtrl ctrl;
         private IDbEventWriter dbWriter;
 
         public IDbEventWriter.EventType CurrentState { get; private set; }
-        public Button(int gpiochip, int pinNumber, string gpioId, IDbEventWriter dbWriter)
+        public Button(IGpioCtrl ctrl, int pinNumber, string gpioId, IDbEventWriter dbWriter)
         {
-            this.driver = new LibGpiodDriver(gpiochip);
-            this.ctrl = new GpioController(PinNumberingScheme.Logical, driver);
             this.pinNumber = pinNumber;
-            this.gpiochip = gpiochip;
+            this.ctrl = ctrl;
             this.gpioId = gpioId;
             this.dbWriter = dbWriter;
         }
@@ -39,8 +71,10 @@ namespace BBB
                 PinEventTypes.Falling,
                 (sender, args) =>
                 {
-                    if(CurrentState == IDbEventWriter.EventType.LOW)   // continue the falling 
-                    {} // do nothing
+                    if (CurrentState == IDbEventWriter.EventType.LOW) // continue the falling 
+                    {
+                        // do nothing
+                    } 
                     else
                     {
                         dbWriter.SaveEvent(DateTime.Now, gpioId, IDbEventWriter.EventType.LOW);
@@ -52,14 +86,16 @@ namespace BBB
                 PinEventTypes.Rising,
                 (sender, args) =>
                 {
-                     if(CurrentState == IDbEventWriter.EventType.HIGH)   // continue the rizing 
-                    {} // do nothing
-                    else
-                    {
-                        dbWriter.SaveEvent(DateTime.Now, gpioId, IDbEventWriter.EventType.HIGH);
-                        CurrentState = IDbEventWriter.EventType.HIGH;
-                        Console.WriteLine(gpioId + " High");
-                    }
+                     if(CurrentState == IDbEventWriter.EventType.HIGH)   // continue the rising 
+                     {
+                         // do nothing
+                     } 
+                     else
+                     {
+                         dbWriter.SaveEvent(DateTime.Now, gpioId, IDbEventWriter.EventType.HIGH);
+                         CurrentState = IDbEventWriter.EventType.HIGH;
+                         Console.WriteLine(gpioId + " High");
+                     }
                 });
         }
 
@@ -81,14 +117,40 @@ namespace BBB
                 ctrl.Dispose();
                 ctrl = null;
             }
-            
-            if (disposing && driver != null)
-            {
-                driver.Dispose();
-                driver = null;
-            }
         }
 
         ~Button() => Dispose(false);
+    }
+
+    public class ButtonWorker : Worker
+    {
+        public IGpioCtrl Ctrl { get; private set; }
+
+        public int Pin { get; private set; }
+        public string GpioId { get; private set; }
+        public IDbEventWriter DbWriter { get; private set; }
+
+        public ButtonWorker(IGpioCtrl ctrl, int pin, string gpioId, IDbEventWriter dbWriter)
+        {
+            Ctrl = ctrl;
+            Pin = pin;
+            GpioId = gpioId;
+            DbWriter = dbWriter;
+        }
+
+        public override void DoWork()
+        {
+            Console.WriteLine("Starting " + GpioId + " Thread");
+ 
+            using var button = new Button(Ctrl, Pin, GpioId, DbWriter);   
+            button.Open();
+
+            while(!_shouldStop)
+            {
+                Thread.Sleep(1000);
+            }
+
+            Console.WriteLine("Exiting " + GpioId + " thread");
+        }
     }
 }   // ns BBB

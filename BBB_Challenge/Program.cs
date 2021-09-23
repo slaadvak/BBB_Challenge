@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Device.Gpio;
+using System.Device.Gpio.Drivers;
 using System.Threading;
 using System.Device.I2c;
 using Sqlite;
@@ -8,36 +10,6 @@ using Web;
 
 namespace BBB
 {
-    class ButtonWorker : Worker
-    {
-        public int GpioChip { get; private set; }
-        public int Pin { get; private set; }
-        public string GpioId { get; private set; }
-        public IDbEventWriter DbWriter { get; private set; }
-
-        public ButtonWorker(int gpiochip, int pin, string gpioId, IDbEventWriter dbWriter)
-        {
-            GpioChip = gpiochip;
-            Pin = pin;
-            GpioId = gpioId;
-            DbWriter = dbWriter;
-        }
-
-        public override void DoWork()
-        {
-            Console.WriteLine("Starting " + GpioId + " Thread");
-
-            using var button = new Button(GpioChip, Pin, GpioId, DbWriter);   
-            button.Open();
-            while(!_shouldStop)
-            {
-                Thread.Sleep(1000);
-            }
-
-            Console.WriteLine("Exiting " + GpioId + " thread");
-        }
-    }
-
     class Program
     {
         static int Main(String[] args)
@@ -52,15 +24,17 @@ namespace BBB
                                         exitEvent.Set();
                                     };
 
-            LogBook log = new LogBook("logbook.db");
-            log.LogBoot();
-
             var dbWriter = new SqliteEventWriter("GpioEvents.db");
+            using var driver = new LibGpiodDriver(2);
+            using var ctrl1 = new GpioController(PinNumberingScheme.Logical, driver);
+            using var ctrl2 = new GpioController(PinNumberingScheme.Logical, driver);
+            using var ctrl3 = new GpioController(PinNumberingScheme.Logical, driver);
+            using var ctrl4 = new GpioController(PinNumberingScheme.Logical, driver);
 
-            var buttonWorker_P8_07 = new ButtonWorker( 2,2, "P8_07", dbWriter);
-            var buttonWorker_P8_08 = new ButtonWorker( 2,3, "P8_08", dbWriter);
-            var buttonWorker_P8_09 = new ButtonWorker( 2,5, "P8_09", dbWriter);
-            var buttonWorker_P8_10 = new ButtonWorker( 2,4, "P8_10", dbWriter);
+            var buttonWorker_P8_07 = new ButtonWorker(new GpioCtrl(ctrl1), 2, "P8_07", dbWriter);
+            var buttonWorker_P8_08 = new ButtonWorker(new GpioCtrl(ctrl2), 3, "P8_08", dbWriter);
+            var buttonWorker_P8_09 = new ButtonWorker(new GpioCtrl(ctrl3), 5, "P8_09", dbWriter);
+            var buttonWorker_P8_10 = new ButtonWorker(new GpioCtrl(ctrl4), 4, "P8_10", dbWriter);
 
             Thread buttonThread1 = new Thread(buttonWorker_P8_07.DoWork);
             Thread buttonThread2 = new Thread(buttonWorker_P8_08.DoWork);

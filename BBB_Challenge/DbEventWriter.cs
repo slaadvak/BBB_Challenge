@@ -28,7 +28,7 @@ namespace Sqlite
             using var connection = new SqliteConnection("Data Source=" + dataSource);
             connection.Open();
 
-            var cmdGetTable = connection.CreateCommand();
+            using var cmdGetTable = connection.CreateCommand();
             cmdGetTable.CommandText = "SELECT * from Events";
             using var reader = cmdGetTable.ExecuteReader();
             while (reader.Read())
@@ -52,7 +52,7 @@ namespace Sqlite
             {
                 connection.Open();
 
-                var cmdAddEntry = connection.CreateCommand();
+                using var cmdAddEntry = connection.CreateCommand();
                 var timeStr = time.ToString("MM/dd/yyyy hh:mm:ss.fff tt");
 
                 cmdAddEntry.CommandText =
@@ -70,7 +70,7 @@ namespace Sqlite
             {
                 connection.Open();
 
-                var cmdCreateEventTable = connection.CreateCommand();
+                using var cmdCreateEventTable = connection.CreateCommand();
                 cmdCreateEventTable.CommandText =
                 @"CREATE TABLE IF NOT EXISTS Events (
                         TIME TEXT,

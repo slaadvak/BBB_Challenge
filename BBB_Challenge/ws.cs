@@ -74,7 +74,7 @@ namespace Web
         {
              host = new WebHostBuilder()
             .UseKestrel()
-            //.UseUrls("http://localhost:8082")
+            .UseUrls("http://192.168.0.195:8069", "http://localhost:8069", "http://192.168.7.2:8069")
             .UseContentRoot(Directory.GetCurrentDirectory())
             .UseStartup<Startup>()
             .Build();
