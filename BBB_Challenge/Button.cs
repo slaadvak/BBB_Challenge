@@ -2,11 +2,16 @@ using System;
 using System.Device.Gpio;
 using System.Device.Gpio.Drivers;
 using System.Threading;
+using System.Threading.Tasks;
+using System.Transactions;
 using Sqlite;
 using ThreadUtils;
 
 namespace BBB
 {
+    /// <summary>
+    /// Interface for the used methods set of the GpioController class
+    /// </summary>
     public interface IGpioCtrl : IDisposable
     {
         void OpenPin(int pinNumber, PinMode mode);
@@ -15,6 +20,9 @@ namespace BBB
             PinEventTypes evtType, PinChangeEventHandler callback);
     }
 
+    /// <summary>
+    /// Adapter of the GpioController to the interface
+    /// </summary>
     public class GpioCtrl : IGpioCtrl 
     {
         public GpioController Ctrl { get; private set; }
@@ -33,9 +41,9 @@ namespace BBB
         }
         public void RegisterCallbackForPinValueChangedEvent(int pinNumber,
             PinEventTypes evtType, PinChangeEventHandler callback)
-            {
-                Ctrl.RegisterCallbackForPinValueChangedEvent(pinNumber, evtType, callback);
-            }
+        {
+            Ctrl.RegisterCallbackForPinValueChangedEvent(pinNumber, evtType, callback);
+        }
         public void Dispose()
         {
             Ctrl.Dispose();
@@ -64,33 +72,40 @@ namespace BBB
             var state = Read() ? IDbEventWriter.EventType.HIGH_ON_BOOT 
                                                : IDbEventWriter.EventType.LOW_ON_BOOT;
             dbWriter.SaveEvent(DateTime.Now, gpioId, state);
+
             CurrentState = state == IDbEventWriter.EventType.HIGH_ON_BOOT? 
                                     IDbEventWriter.EventType.HIGH : IDbEventWriter.EventType.LOW;
             
+            // Register callback for falling events
             ctrl.RegisterCallbackForPinValueChangedEvent(pinNumber,
                 PinEventTypes.Falling,
                 (sender, args) =>
                 {
-                    if (CurrentState == IDbEventWriter.EventType.LOW) // continue the falling 
+                    // Compensates for the incomplete switching effect
+                    // We can have several voltage falling events
+                    if (CurrentState == IDbEventWriter.EventType.LOW) // if we are LOW and the falling continues 
                     {
                         // do nothing
                     } 
-                    else
+                    else // we are HIGH and receive Falling signal
                     {
                         dbWriter.SaveEvent(DateTime.Now, gpioId, IDbEventWriter.EventType.LOW);
                         CurrentState = IDbEventWriter.EventType.LOW;
                         Console.WriteLine(gpioId + " Low");
                     }
                 });
+            // Register callback for Rising events
             ctrl.RegisterCallbackForPinValueChangedEvent(pinNumber,
                 PinEventTypes.Rising,
                 (sender, args) =>
                 {
-                     if(CurrentState == IDbEventWriter.EventType.HIGH)   // continue the rising 
+                    // Compensates for the incomplete switching effect
+                    // We can have several voltage rising events
+                     if(CurrentState == IDbEventWriter.EventType.HIGH)   // if we are HIGH and the rising continues 
                      {
                          // do nothing
                      } 
-                     else
+                     else // we are LOW and receive Rising signal
                      {
                          dbWriter.SaveEvent(DateTime.Now, gpioId, IDbEventWriter.EventType.HIGH);
                          CurrentState = IDbEventWriter.EventType.HIGH;
@@ -121,8 +136,10 @@ namespace BBB
 
         ~Button() => Dispose(false);
     }
-
-    public class ButtonWorker : Worker
+    /// <summary>
+    /// ActiveObject containing Button
+    /// </summary>
+    public class ButtonWorker : ActiveObject
     {
         public IGpioCtrl Ctrl { get; private set; }
 
@@ -141,14 +158,12 @@ namespace BBB
         public override void DoWork()
         {
             Console.WriteLine("Starting " + GpioId + " Thread");
- 
+
             using var button = new Button(Ctrl, Pin, GpioId, DbWriter);   
             button.Open();
 
             while(!_shouldStop)
-            {
-                Thread.Sleep(1000);
-            }
+                Thread.Sleep(100);
 
             Console.WriteLine("Exiting " + GpioId + " thread");
         }

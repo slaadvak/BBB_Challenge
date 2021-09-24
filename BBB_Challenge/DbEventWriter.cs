@@ -5,13 +5,17 @@ using Microsoft.Data.Sqlite;
 
 namespace Sqlite
 {
-
+    /// <summary>
+    /// Interface for the DbWriter modules
+    /// </summary>
     public interface IDbEventWriter
     {
         enum EventType { HIGH, LOW, HIGH_ON_BOOT, LOW_ON_BOOT };
         void SaveEvent(DateTime time, string pin, EventType type);
     }
-
+    /// <summary>
+    /// Reads and writes into table "Events" of the selected Sqlite database
+    /// </summary>
     public class SqliteEventWriter : IDbEventWriter
     {
         string dataSource;
@@ -20,7 +24,10 @@ namespace Sqlite
             this.dataSource = dataSource;
             CreateDB();
         }
-
+        /// <summary>
+        /// Reads all rows of the table "Events"
+        /// </summary>
+        /// <returns>The first row contains the column names. The following rows contain the table rows</returns>
         public List<List<string>> ReadAllEvents()
         {
             var data = new List<List<string>>();

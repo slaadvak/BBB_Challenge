@@ -12,7 +12,7 @@ public abstract class Worker
     }
     //Volatile is used as hint to the compiler that this data
     //member will be accessed by multiple threads.
-    protected volatile bool _shouldStop;
+    protected volatile bool _shouldStop = false;
 }
 
 }   // ns ThreadUtils

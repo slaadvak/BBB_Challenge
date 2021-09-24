@@ -16,6 +16,10 @@ namespace Web
 {
     public class Startup
     {
+      /// <summary>
+      /// Gets the Events from Sqlite database table
+      /// </summary>
+      /// <returns>string containing the HTML table with the events details</returns>
         public static string GetTable()
         {
             var dbWriter = new SqliteEventWriter("GpioEvents.db");
@@ -66,26 +70,33 @@ namespace Web
             app.Run(context => context.Response.WriteAsync("Hello from BBB!"));
         }
     }
-
-    public class wsWorker : Worker, IDisposable
+    /// <summary>
+    /// runs Kestrel on a different thread
+    /// </summary>
+    public class wsWorker : ActiveObject
     {
         private IWebHost host;
         public override void DoWork()
         {
              host = new WebHostBuilder()
             .UseKestrel()
+            // we add here the IP addresses of our current Beagle bone board
+            // TODO: find how to automatically answer requests on all IPs without explicit assignment
             .UseUrls("http://192.168.0.195:8069", "http://localhost:8069", "http://192.168.7.2:8069")
             .UseContentRoot(Directory.GetCurrentDirectory())
             .UseStartup<Startup>()
             .Build();
             
             host.Run();
-        }
 
-        public void Dispose()
+            Console.WriteLine("Exiting WebHost thread");
+ }
+
+        public new void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
+            base.Dispose();
         }
 
         protected virtual void Dispose(bool disposing)
