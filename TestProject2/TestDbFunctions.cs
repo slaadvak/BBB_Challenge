@@ -5,7 +5,7 @@ using System.IO;
 
 namespace Test_BBB_Challenge
 {
-    public class Tests
+    public class TestDbFunctions
     {
         private SqliteEventWriter dbWriter;
 
@@ -15,7 +15,7 @@ namespace Test_BBB_Challenge
         }
 
         [Test]
-        public void Test1()
+        public void TestDbCreation()
         {
             File.Delete("Test.db");
             dbWriter = new SqliteEventWriter("Test.db");
@@ -24,14 +24,21 @@ namespace Test_BBB_Challenge
         }
 
         [Test]
-        public void Test2()
+        public void TestDbWriteAndRead()
         {
+            File.Delete("Test.db");
+            dbWriter = new SqliteEventWriter("Test.db");
             dbWriter.SaveEvent(DateTime.Now,"P8_07", IDbEventWriter.EventType.HIGH);
             dbWriter.SaveEvent(DateTime.Now,"P8_08", IDbEventWriter.EventType.HIGH_ON_BOOT);
             dbWriter.SaveEvent(DateTime.Now,"P8_09", IDbEventWriter.EventType.LOW);
             var readResult = dbWriter.ReadAllEvents();
-
+            // The 3 events plus the table header which is the first row
             Assert.AreEqual(readResult.Count, 4);
+            Assert.AreEqual(readResult[1][1], "P8_07");
+            Assert.AreEqual(readResult[1][2], "HIGH");
+            Assert.AreEqual(readResult[2][1], "P8_08");
+            Assert.AreEqual(readResult[2][2], "HIGH_ON_BOOT");
+            Assert.Pass();
         }
     }
 }

@@ -11,7 +11,9 @@ using static System.Console;
 
 namespace Test_BBB_Challenge
 {
-
+    /// <summary>
+    /// Class emulating the Gpio controller on BBB
+    /// </summary>
     class MockGpioController : IGpioCtrl
     {
         public int Pin { get; private set; }
@@ -35,7 +37,6 @@ namespace Test_BBB_Challenge
                 }
             }
         }
-
 
         public MockGpioController()
         {
@@ -63,7 +64,7 @@ namespace Test_BBB_Challenge
         {}
     }
 
-    public class Tests2
+    public class TestsButtonFunctions
     {
         [SetUp]
         public void Setup()
@@ -71,7 +72,7 @@ namespace Test_BBB_Challenge
         }
 
         [Test]
-        public void Test1()
+        public void TestButtonOperationsOnCreation()
         {
             var mockDb = new Mock<IDbEventWriter>();
             var mockCtrl = new Mock<IGpioCtrl>();
@@ -90,7 +91,7 @@ namespace Test_BBB_Challenge
         }
 
         [Test]
-        public void Test2()
+        public void TestButtonCallbacks()
         {
             var mockDb = new Mock<IDbEventWriter>();
             var mockCtrl = new MockGpioController {PinValue = PinValue.High};
@@ -107,15 +108,13 @@ namespace Test_BBB_Challenge
                 "Method called wrong number of times");
         }
         [Test]
-        public void Test3()
+        public void TestButtonWorkerCallbacks()
         {
             var mockDb = new Mock<IDbEventWriter>();
             var mockCtrl = new MockGpioController {PinValue = PinValue.High};
 
             var btnWorker = new ButtonWorker(mockCtrl, 2,"P8_07",  mockDb.Object);
             
-            Thread buttonThread = new Thread(btnWorker.DoWork);
-            buttonThread.Start();
             Thread.Sleep(1000);
 
             mockDb.Verify(x => x.SaveEvent(It.IsAny<DateTime>(), "P8_07", IDbEventWriter.EventType.HIGH_ON_BOOT),
@@ -128,7 +127,6 @@ namespace Test_BBB_Challenge
                 "Method called wrong number of times");
 
             btnWorker.RequestStop();
-            buttonThread.Join();
         }
     }
 }
