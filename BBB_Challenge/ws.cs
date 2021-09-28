@@ -82,7 +82,7 @@ namespace Web
             .UseKestrel()
             // we add here the IP addresses of our current Beagle bone board
             // TODO: find how to automatically answer requests on all IPs without explicit assignment
-            .UseUrls("http://192.168.0.195:8069", "http://localhost:8069", "http://192.168.7.2:8069")
+            .UseUrls("http://localhost:8069", "http://192.168.7.2:8069")
             .UseContentRoot(Directory.GetCurrentDirectory())
             .UseStartup<Startup>()
             .Build();

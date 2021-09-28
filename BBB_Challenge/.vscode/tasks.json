@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/BBB_Challenge.csproj",
+                "${workspaceFolder}/${workspaceFolderBasename}.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -19,7 +19,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/BBB_Challenge.csproj",
+                "${workspaceFolder}/${workspaceFolderBasename}.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -32,7 +32,7 @@
             "args": [
                 "watch",
                 "run",
-                "${workspaceFolder}/BBB_Challenge.csproj",
+                "${workspaceFolder}/${workspaceFolderBasename}.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -50,7 +50,7 @@
                 ";",
                 "sh",
                 "-c",
-                "\"rsync -rvuz ${workspaceFolder}/bin/linux-arm/publish/ debian@192.168.7.2:~/${workspaceFolderBasename}\""
+                "\"rsync -rvuz ${workspaceFolder}/bin/linux-arm/publish/ ${config:remote_user}@${config:remote_url}:~/${workspaceFolderBasename}\""
             ],
             "windows": {
                 "command": "cmd",
@@ -61,7 +61,7 @@
                     "&&",
                     "bash",
                     "-c",
-                    "\"rsync -rvuz $(wslpath '${workspaceFolder}')/bin/linux-arm/publish/ debian@192.168.7.2:~/${workspaceFolderBasename}\""
+                    "\"rsync -rvuz $(wslpath '${workspaceFolder}')/bin/linux-arm/publish/ ${config:remote_user}@${config:remote_url}:~/${workspaceFolderBasename}\""
                 ]
             }
         }

@@ -1,2 +1,7 @@
 {
+    "remote_url": "192.168.7.2",
+    "remote_user": "debian",
+    "remote_pwd": "temppwd",
+    "remote_base_dir": "/home",
+    "target_framework": "net5.0"
 }

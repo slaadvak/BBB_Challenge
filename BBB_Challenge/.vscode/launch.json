@@ -17,7 +17,7 @@
                 "pipeCwd": "${workspaceRoot}",
                 "pipeProgram": "/usr/bin/ssh",
                 "pipeArgs": [
-                    "debian@192.168.7.2"
+                    "${config:remote_user}@${config:remote_url}"
                 ],
                 "debuggerPath": "~/vsdbg/vsdbg"
             },
@@ -28,8 +28,8 @@
                     "pipeArgs": [
                         "-ssh",
                         "-pw",
-                        "temppwd",
-                        "debian@192.168.7.2"
+                        "${config:remote_pwd}",
+                        "${config:remote_user}@${config:remote_url}"
                     ],
                     "debuggerPath": "~/vsdbg/vsdbg"
                 }
