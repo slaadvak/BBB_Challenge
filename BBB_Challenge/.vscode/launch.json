@@ -1,0 +1,39 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "BBB Publish, Launch, and Attach Debugger",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "BBBPublish",
+            "program": "~/${workspaceFolderBasename}/${workspaceFolderBasename}",
+            "cwd": "~/${workspaceFolderBasename}",
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "args": [
+                "https://your-dmx-function.azurewebsites.net/api"
+            ],
+            "pipeTransport": {
+                "pipeCwd": "${workspaceRoot}",
+                "pipeProgram": "/usr/bin/ssh",
+                "pipeArgs": [
+                    "${config:remote_user}@${config:remote_url}"
+                ],
+                "debuggerPath": "~/vsdbg/vsdbg"
+            },
+            "windows": {
+                "pipeTransport": {
+                    "pipeCwd": "${workspaceRoot}",
+                    "pipeProgram": "plink",
+                    "pipeArgs": [
+                        "-ssh",
+                        "-pw",
+                        "${config:remote_pwd}",
+                        "${config:remote_user}@${config:remote_url}"
+                    ],
+                    "debuggerPath": "~/vsdbg/vsdbg"
+                }
+            }
+        }
+    ]
+}
